@@ -29,7 +29,11 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+/build/kotlin/
+/build/app/
+/build/0cbf03bb79ed10c05c7f19c2c36b34f3.cache.dill.track.dill
+/build/ios/
+/build/a7b8961f0ba5ad4a6de54561804dd16c/
 
 # Symbolication related
 app.*.symbols
@@ -41,3 +45,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Not ignore build\web
+!build/web
