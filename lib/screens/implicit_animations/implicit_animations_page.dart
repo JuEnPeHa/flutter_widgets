@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+
+const Set<String> imagesTitles = {'Tortas', 'Frappés', 'Desayunos', 'Cenas'};
 
 class ImplicitAnimationsPage extends StatelessWidget {
   const ImplicitAnimationsPage({super.key});
@@ -161,7 +162,10 @@ class _LocationWidgetState extends State<LocationWidget> {
               : notExpandedBottomPaddingImageWidget,
           child: GestureDetector(
             onPanUpdate: onPanUpdate,
-            child: ImageWidget(locationId: widget.locationId),
+            child: ImageWidget(
+              locationId: widget.locationId,
+              isExpanded: isExpanded,
+            ),
           ),
         ),
       ],
@@ -173,7 +177,7 @@ class _LocationWidgetState extends State<LocationWidget> {
       setState(() {
         isExpanded = false;
       });
-    } else {
+    } else if (details.delta.dy == 0 || details.delta.dy < 0) {
       setState(() {
         isExpanded = true;
       });
@@ -185,20 +189,15 @@ class ImageWidget extends StatelessWidget {
   const ImageWidget({
     super.key,
     required this.locationId,
+    required this.isExpanded,
   });
 
   final int locationId;
+  final bool isExpanded;
 
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
-
-    const Set<String> imagesTitles = {
-      'Tortas',
-      'Frappés',
-      'Desayunos',
-      'Cenas'
-    };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -222,45 +221,73 @@ class ImageWidget extends StatelessWidget {
             ),
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Image.asset(
-            //   'assets/images/location_$locationId.jpg',
-            //   height: 200,
-            //   width: double.infinity,
-            //   fit: BoxFit.cover,
-            // ),
-            // CircleAvatar(
-            //   radius: 50,
-            //   backgroundColor: Colors.green[500],
-            //   child: Text(
-            //     locationId.toString(),
-            //     style: Theme.of(context).textTheme.titleLarge,
-            //   ),
-            // ),
-            // const SizedBox(height: 16),
-            Text(
-              imagesTitles.elementAt(locationId - 1),
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+        child: LayoutBuilder(builder: (context, constraints) {
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: Center(
+                  child: Text(
+                    imagesTitles.elementAt(locationId - 1),
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {},
-              child: const Text(
-                'Ordenar ahora',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-          ],
-        ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
+                      )),
+                  height: constraints.maxHeight * 0.2,
+                  width: constraints.maxWidth,
+                  // The child if isExpanded is "Desliza hacia arriba para ver más detalles" and if not is "Desliza hacia abajo para ocultar detalles" y una flecha hacia arriba o abajo
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              isExpanded
+                                  ? 'Desliza hacia abajo para cerrar detalles'
+                                  : 'Desliza hacia arriba para ver más detalles',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isExpanded
+                                    ? Icons.keyboard_arrow_down
+                                    : Icons.keyboard_arrow_up,
+                                color: Colors.white,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -284,6 +311,7 @@ class ExpandedContentWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String title = imagesTitles.elementAt(locationId - 1);
     return Container(
       alignment: Alignment.bottomCenter,
       padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -293,55 +321,103 @@ class ExpandedContentWidget extends StatelessWidget {
       ),
       child: AnimatedContainer(
           duration: Duration(milliseconds: duration),
-          color: Colors.black,
           height: height,
           width: width,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: RatingBarIndicator(
-                            rating: 2.75,
-                            itemBuilder: (context, index) => Icon(
+          child: Container(
+            margin: EdgeInsets.all(8),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Container(
+                        height: height * 0.2,
+                        width: (height * 0.2) * 5,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Icon(
                               Icons.star,
                               color: Colors.amber,
+                              size: (height * 0.2) - 2,
                             ),
-                            itemCount: 5,
-                            itemSize: 50.0,
-                            direction: Axis.vertical,
+                            Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: (height * 0.2) - 2,
+                            ),
+                            Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: (height * 0.2) - 2,
+                            ),
+                            Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: (height * 0.2) - 2,
+                            ),
+                            Icon(
+                              Icons.star,
+                              color: Colors.grey,
+                              size: (height * 0.2) - 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FittedBox(
+                          child: Text(
+                            // Revisar si la penultima letra es a o no
+                            'Prueba nuestr' +
+                                (title[title.length - 2] == 'a' ? 'as' : 'os') +
+                                ' delicios' +
+                                (title[title.length - 2] == 'a' ? 'as' : 'os') +
+                                ' ' +
+                                title.toLowerCase(),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                         ),
-                        Expanded(
-                          child: Container(
-                            color: Colors.red,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            color: Colors.yellow,
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            color: Colors.orange,
-                          ),
-                        ),
-                      ],
-                    ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  flex: 2,
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child:
+                        // Boton ver mas
+                        ElevatedButton(
+                            onPressed: () {},
+                            child: Text('Ver más',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    )),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .secondary
+                                  .withOpacity(0.25),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            )),
                   ),
-                ],
-              );
-            },
+                )
+              ],
+            ),
           )),
     );
   }
